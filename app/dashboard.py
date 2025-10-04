@@ -1,10 +1,12 @@
 """
-Analytics Dashboard for BQ13 and BQ14
-=====================================
-Dashboard interactivo para analizar tiempos de carga y pagos.
+Analytics Dashboard for BQ13, BQ14, BQ4 & BQ5
+==============================================
+Dashboard interactivo para analizar tiempos de carga, pagos, pickup y reorders.
 
 BQ13: P95 app loading time (open to usable menu) by device class and network
 BQ14: P95 payment time (Pay tap to confirmed) by network type and device class
+BQ4: Median pickup waiting time by peak vs off-peak hours
+BQ5: Product categories re-order patterns by time
 
 Usage:
     streamlit run app/dashboard.py
@@ -29,7 +31,7 @@ except ModuleNotFoundError:
 
 # Configuración de página
 st.set_page_config(
-    page_title="Analytics Dashboard - BQ13 & BQ14",
+    page_title="Analytics Dashboard - BQ13, BQ14, BQ4 & BQ5",
     page_icon="📊",
     layout="wide"
 )
@@ -54,6 +56,47 @@ def format_duration(ms):
         return f"{ms:.0f}ms"
     else:
         return f"{ms/1000:.2f}s"
+
+def load_pickup_data(file_path):
+    """Carga y parsea el archivo CSV de compras"""
+    try:
+        df = pd.read_csv(file_path)
+        df['fecha_creacion'] = pd.to_datetime(df['fecha_creacion'])
+        df['fecha_listo'] = pd.to_datetime(df['fecha_listo'])
+        df['fecha_entregado'] = pd.to_datetime(df['fecha_entregado'])
+        return df
+    except Exception as e:
+        st.error(f"❌ Error cargando archivo: {e}")
+        return None
+
+def classify_peak_hours(hour):
+    """Clasifica horas como pico o valle"""
+    if (12 <= hour < 14) or (19 <= hour < 21):
+        return 'Peak'
+    else:
+        return 'Off-Peak'
+
+def get_meal_period(hour):
+    """Identifica el periodo de comida"""
+    if 6 <= hour < 11:
+        return 'Breakfast'
+    elif 11 <= hour < 15:
+        return 'Lunch'
+    elif 15 <= hour < 18:
+        return 'Snack'
+    elif 18 <= hour < 22:
+        return 'Dinner'
+    else:
+        return 'Late Night'
+
+def format_time(seconds):
+    """Formatea segundos a formato legible"""
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+    elif seconds < 3600:
+        return f"{seconds/60:.2f}min"
+    else:
+        return f"{seconds/3600:.2f}h"
 
 def bq13_analysis(df):
     """
@@ -485,9 +528,236 @@ def bq5_analysis():
         if df_hourly is not None and not df_hourly.empty:
             st.download_button("Download hourly distribution (CSV)", data=df_hourly.to_csv(index=False), file_name="bq5_hourly_distribution.csv", mime="text/csv")
 
+def bq4_analysis():
+    """
+    BQ4: Median pickup waiting time from "order ready" to "order picked up",
+    segmented by peak vs off-peak hours
+    """
+    st.header("⏱️ BQ4: Pickup Waiting Time (Median)")
+    st.markdown("**Pregunta**: *¿Cuál es el tiempo de espera mediano desde 'pedido listo' hasta 'pedido recogido', segmentado por horas pico vs valle?*")
+    
+    # Sidebar para cargar datos de compras
+    st.sidebar.markdown("---")
+    st.sidebar.header("📦 Datos de Compras (BQ4)")
+    
+    uploaded_pickup_file = st.sidebar.file_uploader("Subir CSV de compras", type=['csv'], key="pickup_upload")
+    
+    default_pickup_path = st.sidebar.text_input(
+        "O especificar ruta del CSV de compras",
+        value="data/compras_completadas_20251004_172958.csv",
+        key="pickup_path"
+    )
+    
+    df_pickup = None
+    
+    if uploaded_pickup_file is not None:
+        df_pickup = load_pickup_data(uploaded_pickup_file)
+    elif Path(default_pickup_path).exists():
+        df_pickup = load_pickup_data(default_pickup_path)
+        st.sidebar.success(f"✅ Datos de compras cargados")
+    else:
+        st.info("👆 Por favor sube un archivo CSV de compras o especifica una ruta válida en el sidebar.")
+        st.markdown("### Formato esperado del CSV:")
+        st.code("""id_compra,fecha_listo,fecha_entregado,tiempo_espera_entrega_seg,...
+1,2025-10-04 02:56:49,2025-10-04 02:56:52,2.36,...""")
+        return
+    
+    if df_pickup is not None:
+        # Procesar datos
+        df_pickup['hora_listo'] = df_pickup['fecha_listo'].dt.hour
+        df_pickup['periodo_hora'] = df_pickup['hora_listo'].apply(classify_peak_hours)
+        df_pickup['periodo_comida'] = df_pickup['hora_listo'].apply(get_meal_period)
+        df_pickup['dia_semana'] = df_pickup['fecha_listo'].dt.day_name()
+        df_pickup['es_fin_semana'] = df_pickup['fecha_listo'].dt.dayofweek >= 5
+        
+        # Resumen general
+        with st.expander("📋 Resumen de Datos", expanded=False):
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Pedidos", len(df_pickup))
+            with col2:
+                peak_count = (df_pickup['periodo_hora'] == 'Peak').sum()
+                st.metric("Pedidos Peak", peak_count)
+            with col3:
+                offpeak_count = (df_pickup['periodo_hora'] == 'Off-Peak').sum()
+                st.metric("Pedidos Off-Peak", offpeak_count)
+            with col4:
+                st.write(f"**Rango de fechas:**")
+                st.write(f"{df_pickup['fecha_listo'].min().date()} a {df_pickup['fecha_listo'].max().date()}")
+        
+        # Tabs para organizar análisis
+        tab1, tab2, tab3 = st.tabs([
+            "📊 Peak vs Off-Peak", 
+            "🕐 Por Hora del Día", 
+            "📅 Por Día de Semana"
+        ])
+        
+        # TAB 1: Peak vs Off-Peak
+        with tab1:
+            st.subheader("📊 Análisis Peak vs Off-Peak Hours")
+            
+            st.info("""
+            **Horas Pico**: 12:00-14:00 (almuerzo) y 19:00-21:00 (cena)  
+            **Horas Valle**: Resto del día
+            """)
+            
+            # Métricas principales
+            col1, col2, col3 = st.columns(3)
+            
+            peak_data = df_pickup[df_pickup['periodo_hora'] == 'Peak']['tiempo_espera_entrega_seg']
+            offpeak_data = df_pickup[df_pickup['periodo_hora'] == 'Off-Peak']['tiempo_espera_entrega_seg']
+            
+            peak_median = peak_data.median()
+            offpeak_median = offpeak_data.median()
+            diff = peak_median - offpeak_median
+            pct_diff = (diff / offpeak_median * 100) if offpeak_median > 0 else 0
+            
+            with col1:
+                st.metric(
+                    "Mediana Peak", 
+                    format_time(peak_median),
+                    f"{pct_diff:+.1f}% vs Off-Peak"
+                )
+            with col2:
+                st.metric(
+                    "Mediana Off-Peak",
+                    format_time(offpeak_median)
+                )
+            with col3:
+                st.metric(
+                    "Diferencia",
+                    format_time(abs(diff)),
+                    f"{abs(pct_diff):.1f}%"
+                )
+            
+            # Box plot comparativo
+            fig_box = px.box(
+                df_pickup,
+                x='periodo_hora',
+                y='tiempo_espera_entrega_seg',
+                color='periodo_hora',
+                title="Waiting Time Distribution: Peak vs Off-Peak",
+                labels={'tiempo_espera_entrega_seg': 'Waiting Time (seconds)', 'periodo_hora': 'Period'},
+                color_discrete_map={'Peak': 'salmon', 'Off-Peak': 'lightblue'},
+                category_orders={'periodo_hora': ['Off-Peak', 'Peak']}
+            )
+            fig_box.add_hline(y=peak_median, line_dash="dash", line_color="red", 
+                             annotation_text=f"Peak Median: {format_time(peak_median)}")
+            fig_box.add_hline(y=offpeak_median, line_dash="dash", line_color="blue",
+                             annotation_text=f"Off-Peak Median: {format_time(offpeak_median)}")
+            st.plotly_chart(fig_box, use_container_width=True)
+            
+            # Estadísticas detalladas
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### 📊 Peak Hours")
+                stats_peak = pd.DataFrame({
+                    'Métrica': ['Count', 'Median', 'Mean', 'Std Dev', 'Min', 'Max'],
+                    'Valor': [
+                        len(peak_data),
+                        f"{peak_data.median():.2f}s",
+                        f"{peak_data.mean():.2f}s",
+                        f"{peak_data.std():.2f}s",
+                        f"{peak_data.min():.2f}s",
+                        f"{peak_data.max():.2f}s"
+                    ]
+                })
+                st.dataframe(stats_peak, use_container_width=True, hide_index=True)
+            
+            with col2:
+                st.markdown("### 📊 Off-Peak Hours")
+                stats_offpeak = pd.DataFrame({
+                    'Métrica': ['Count', 'Median', 'Mean', 'Std Dev', 'Min', 'Max'],
+                    'Valor': [
+                        len(offpeak_data),
+                        f"{offpeak_data.median():.2f}s",
+                        f"{offpeak_data.mean():.2f}s",
+                        f"{offpeak_data.std():.2f}s",
+                        f"{offpeak_data.min():.2f}s",
+                        f"{offpeak_data.max():.2f}s"
+                    ]
+                })
+                st.dataframe(stats_offpeak, use_container_width=True, hide_index=True)
+        
+        # TAB 2: Por Hora del Día
+        with tab2:
+            st.subheader("🕐 Análisis por Hora del Día")
+            
+            # Agrupar por hora
+            hourly = df_pickup.groupby('hora_listo').agg({
+                'tiempo_espera_entrega_seg': ['count', 'median', 'mean']
+            }).reset_index()
+            hourly.columns = ['Hora', 'Count', 'Median', 'Mean']
+            hourly['Periodo'] = hourly['Hora'].apply(classify_peak_hours)
+            
+            # Gráfico de barras por hora
+            fig_hourly = px.bar(
+                hourly,
+                x='Hora',
+                y='Median',
+                color='Periodo',
+                title='Median Waiting Time by Hour of Day',
+                labels={'Median': 'Median Waiting Time (seconds)', 'Hora': 'Hour'},
+                text='Median',
+                color_discrete_map={'Peak': 'salmon', 'Off-Peak': 'lightblue'}
+            )
+            fig_hourly.update_traces(texttemplate='%{text:.1f}s', textposition='outside')
+            fig_hourly.update_layout(height=500)
+            
+            # Resaltar horas pico
+            fig_hourly.add_vrect(x0=11.5, x1=14.5, fillcolor="red", opacity=0.1, 
+                                line_width=0, annotation_text="Lunch Peak", annotation_position="top left")
+            fig_hourly.add_vrect(x0=18.5, x1=21.5, fillcolor="orange", opacity=0.1,
+                                line_width=0, annotation_text="Dinner Peak", annotation_position="top left")
+            
+            st.plotly_chart(fig_hourly, use_container_width=True)
+            
+            # Top 5 horas
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("### ⚠️ Top 5 Horas Más Lentas")
+                hourly_sorted = df_pickup.groupby('hora_listo')['tiempo_espera_entrega_seg'].median().sort_values(ascending=False).head(5)
+                for hour, median in hourly_sorted.items():
+                    period = classify_peak_hours(hour)
+                    st.write(f"**{int(hour):02d}:00** ({period}): {format_time(median)}")
+            
+            with col2:
+                st.markdown("### ✅ Top 5 Horas Más Rápidas")
+                hourly_fastest = df_pickup.groupby('hora_listo')['tiempo_espera_entrega_seg'].median().sort_values().head(5)
+                for hour, median in hourly_fastest.items():
+                    period = classify_peak_hours(hour)
+                    st.write(f"**{int(hour):02d}:00** ({period}): {format_time(median)}")
+        
+        # TAB 3: Por Día de Semana
+        with tab3:
+            st.subheader("📅 Análisis por Día de Semana")
+            
+            # Agrupar por día y periodo
+            daily = df_pickup.groupby(['dia_semana', 'periodo_hora']).agg({
+                'tiempo_espera_entrega_seg': ['count', 'median']
+            }).reset_index()
+            daily.columns = ['Día', 'Periodo', 'Count', 'Median']
+            
+            # Gráfico de barras agrupadas
+            fig_daily = px.bar(
+                daily,
+                x='Día',
+                y='Median',
+                color='Periodo',
+                barmode='group',
+                title='Median Waiting Time by Day of Week',
+                labels={'Median': 'Median Waiting Time (seconds)', 'Día': 'Day of Week'},
+                color_discrete_map={'Peak': 'salmon', 'Off-Peak': 'lightblue'},
+                category_orders={
+                    'Día': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+                }
+            )
+            st.plotly_chart(fig_daily, use_container_width=True)
+
 def main():
-    st.title("📊 Analytics Dashboard - BQ13, BQ14 & BQ5")
-    st.markdown("**Análisis de performance y comportamiento de reorders**")
+    st.title("📊 Analytics Dashboard - BQ13, BQ14, BQ4 & BQ5")
+    st.markdown("**Análisis de performance, pagos, pickup y reorders**")
     
     # Sidebar para cargar datos
     st.sidebar.header("📁 Cargar Datos")
@@ -530,7 +800,13 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3, tab4 = st.tabs(["📱 BQ13: App Loading", "💳 BQ14: Payment Time", "🔁 BQ5: Reorders", "📊 Datos Crudos"])
+        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+            "📱 BQ13: App Loading", 
+            "💳 BQ14: Payment Time", 
+            "⏱️ BQ4: Pickup Time",
+            "🔁 BQ5: Reorders", 
+            "📊 Datos Crudos"
+        ])
         
         with tab1:
             bq13_analysis(df)
@@ -539,9 +815,12 @@ def main():
             bq14_analysis(df)
 
         with tab3:
-            bq5_analysis()
+            bq4_analysis()
 
         with tab4:
+            bq5_analysis()
+
+        with tab5:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
