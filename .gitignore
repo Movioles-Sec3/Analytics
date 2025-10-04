@@ -9,15 +9,7 @@ env/
 .venv/
 venv/
 
-# Data outputs
-data/*.parquet
-data/*.xlsx
-data/*.xls
-data/*.json
-data/*.zip
-*.png
-*.csv
-!data/analytics_events.csv
+
 
 # Streamlit
 .streamlit/

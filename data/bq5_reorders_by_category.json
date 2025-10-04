@@ -1,0 +1,69 @@
+{
+  "start": "2025-01-01T00:00:00Z",
+  "end": "2025-12-31T00:00:00Z",
+  "timezone_offset_minutes": -300,
+  "categories": [
+    {
+      "categoria_id": 1,
+      "categoria_nombre": "Cervezas",
+      "reorder_count": 3,
+      "hour_distribution": [
+        {
+          "hour": 15,
+          "count": 1
+        },
+        {
+          "hour": 17,
+          "count": 1
+        },
+        {
+          "hour": 18,
+          "count": 1
+        }
+      ],
+      "peak_hours": [
+        15,
+        17,
+        18
+      ]
+    },
+    {
+      "categoria_id": 2,
+      "categoria_nombre": "Cócteles",
+      "reorder_count": 2,
+      "hour_distribution": [
+        {
+          "hour": 15,
+          "count": 1
+        },
+        {
+          "hour": 17,
+          "count": 1
+        }
+      ],
+      "peak_hours": [
+        15,
+        17
+      ]
+    },
+    {
+      "categoria_id": 3,
+      "categoria_nombre": "Tapas",
+      "reorder_count": 2,
+      "hour_distribution": [
+        {
+          "hour": 15,
+          "count": 1
+        },
+        {
+          "hour": 17,
+          "count": 1
+        }
+      ],
+      "peak_hours": [
+        15,
+        17
+      ]
+    }
+  ]
+}
