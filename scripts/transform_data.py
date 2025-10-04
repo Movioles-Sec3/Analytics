@@ -13,7 +13,7 @@ Transformaciones aplicadas:
 6. Flags de calidad de red
 
 Usage:
-    python transform_data.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
+    python scripts/transform_data.py "data/analytics_events.csv"
 """
 
 import pandas as pd
