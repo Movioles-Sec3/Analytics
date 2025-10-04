@@ -1,18 +1,27 @@
-# 📊 Analytics Dashboard - BQ13 & BQ14
+# 📊 Analytics Dashboard - BQ13, BQ14 & BQ4
 
-Dashboard y scripts de análisis para responder las preguntas de negocio **BQ13** y **BQ14** sobre tiempos de carga de app y pagos.
+Dashboard y scripts de análisis para responder preguntas de negocio sobre performance de app, pagos y tiempos de pickup.
 
 ## 📋 Preguntas de Negocio
 
 ### BQ13: App Loading Time
 > ¿Cuál es el tiempo P95 de carga de la app (desde apertura hasta menú usable) por clase de dispositivo y condiciones de red, y cómo cambia después de optimizaciones de performance?
 
-**Eventos analizados**: `app_launch_to_menu`
+**Eventos analizados**: `app_launch_to_menu`  
+**Scripts**: `scripts/analyze_bq13.py`
 
 ### BQ14: Payment Completion Time
 > ¿Cuál es el tiempo P95 desde tap en "Pay" hasta pago confirmado, segmentado por tipo de red (Wi-Fi/4G/5G) y clase de dispositivo?
 
-**Eventos analizados**: `payment_completed`
+**Eventos analizados**: `payment_completed`  
+**Scripts**: `scripts/analyze_bq14.py`
+
+### BQ4: Pickup Waiting Time ⏱️
+> ¿Cuál es el tiempo de espera mediano desde "pedido listo" hasta "pedido recogido", segmentado por horas pico vs valle?
+
+**Datos analizados**: Compras completadas  
+**Scripts**: `scripts/analyze_bq4.py`, `scripts/dashboard_bq4.py`  
+**Documentación**: [docs/BQ4.md](docs/BQ4.md) | [Quick Start](docs/QUICKSTART_BQ4.md)
 
 ---
 
