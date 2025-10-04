@@ -17,6 +17,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from pathlib import Path
+from datetime import datetime, timedelta
+import os
+import sys
+try:
+    from app.pipelines.bq5 import run_bq5_etl
+except ModuleNotFoundError:
+    # Ensure project root is on sys.path when running as a script
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+    from app.pipelines.bq5 import run_bq5_etl
 
 # Configuración de página
 st.set_page_config(
@@ -350,9 +359,135 @@ def bq14_analysis(df):
     )
     st.plotly_chart(fig_trend, use_container_width=True)
 
+def bq5_analysis():
+    """
+    BQ5: Which product categories are most frequently re-ordered, and at what times?
+    Fetches from backend (cached in data/) and renders visualizations.
+    """
+    st.header("🔁 BQ5: Reorders by Category and Time")
+
+    # Parameter controls (calendar with defaults this year)
+    current_year = datetime.utcnow().year
+    default_start = datetime(current_year, 1, 1).date()
+    default_end = datetime(current_year, 12, 31).date()
+
+    col1, col2, col3, col4 = st.columns([1,1,1,1])
+    with col1:
+        start_date = st.date_input("From (UTC)", value=default_start)
+    with col2:
+        end_date = st.date_input("To (UTC)", value=default_end)
+    with col3:
+        tz_str = st.text_input("Timezone offset (minutes)", value="-300", placeholder="e.g., -300 for UTC-5")
+    with col4:
+        force_refresh = st.checkbox("Force refresh cache", value=False, help="Ignore cache and query backend")
+
+    # Validate and parse
+    if end_date < start_date:
+        st.warning("'To' date must be on or after 'From' date.")
+        return
+
+    try:
+        tz_offset = int(tz_str) if tz_str.strip() else 0
+    except ValueError:
+        st.warning("Timezone offset must be an integer (minutes). Using 0.")
+        tz_offset = 0
+
+    # Run ETL (uses cache when available unless forced)
+    try:
+        frames = run_bq5_etl(
+            start=datetime.combine(start_date, datetime.min.time()),
+            end=datetime.combine(end_date, datetime.min.time()),
+            timezone_offset_minutes=tz_offset,
+            force_refresh=bool(force_refresh)
+        )
+    except Exception as e:
+        st.error(f"❌ Error running BQ5 ETL: {e}")
+        return
+
+    df_cat = frames.get("categories")
+    df_hourly = frames.get("hourly")
+
+    if df_cat is None or df_cat.empty:
+        st.warning("No category data available.")
+        return
+
+    # KPIs
+    total_categories = len(df_cat)
+    total_reorders = int(df_cat["reorder_count"].sum()) if "reorder_count" in df_cat.columns else 0
+    top_row = df_cat.iloc[0]
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Categories", total_categories)
+    with col2:
+        st.metric("Total reorders", f"{total_reorders}")
+    with col3:
+        st.metric("Top category", f"{top_row.get('categoria_nombre', '-')}: {int(top_row.get('reorder_count', 0))}")
+
+    # Ranking by category
+    st.subheader("🏆 Reorders by Category (Ranking)")
+    fig_rank = px.bar(
+        df_cat,
+        x="categoria_nombre",
+        y="reorder_count",
+        title="Reorders by category",
+        text="reorder_count",
+        color="categoria_nombre"
+    )
+    fig_rank.update_traces(textposition='outside')
+    fig_rank.update_layout(xaxis_title="Category", yaxis_title="Reorders")
+    st.plotly_chart(fig_rank, use_container_width=True)
+
+    # Hour-of-day distribution
+    st.subheader("⏰ Hour-of-day Distribution")
+    if df_hourly is not None and not df_hourly.empty:
+        # Category selector
+        cats = df_hourly["categoria_nombre"].unique().tolist()
+        selected = st.multiselect("Categories", options=cats, default=[])
+        filtered_h = df_hourly[df_hourly["categoria_nombre"].isin(selected)] if selected else df_hourly
+
+        # Bars by hour (grouped by category)
+        fig_hour = px.bar(
+            filtered_h,
+            x="hour",
+            y="count",
+            color="categoria_nombre",
+            barmode='group',
+            title="Reorders by hour",
+        )
+        fig_hour.update_layout(xaxis=dict(dtick=1))
+        st.plotly_chart(fig_hour, use_container_width=True)
+
+        # Heatmap category vs hour
+        pivot = filtered_h.pivot_table(index="categoria_nombre", columns="hour", values="count", aggfunc="sum", fill_value=0)
+        fig_heat = px.imshow(pivot, aspect='auto', text_auto=True, color_continuous_scale='YlOrRd', labels=dict(color="Reorders"))
+        st.plotly_chart(fig_heat, use_container_width=True)
+
+        # Peak hours per category
+        st.markdown("### 🔝 Peak hours per category")
+        peak_rows = []
+        for cname, grp in df_hourly.groupby("categoria_nombre"):
+            if grp.empty:
+                continue
+            max_count = grp["count"].max()
+            hours = grp[grp["count"] == max_count]["hour"].tolist()
+            peak_rows.append({"Category": cname, "Peak hours": ", ".join(map(str, sorted(hours))), "Max per hour": int(max_count)})
+        df_peaks = pd.DataFrame(peak_rows).sort_values(["Max per hour", "Category"], ascending=[False, True])
+        st.dataframe(df_peaks, use_container_width=True, hide_index=True)
+    else:
+        st.info("No hourly distribution available.")
+
+    # Downloads
+    st.subheader("📥 Downloads")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button("Download categories (CSV)", data=df_cat.to_csv(index=False), file_name="bq5_categories.csv", mime="text/csv")
+    with col2:
+        if df_hourly is not None and not df_hourly.empty:
+            st.download_button("Download hourly distribution (CSV)", data=df_hourly.to_csv(index=False), file_name="bq5_hourly_distribution.csv", mime="text/csv")
+
 def main():
-    st.title("📊 Analytics Dashboard - BQ13 & BQ14")
-    st.markdown("**Análisis de performance: tiempos de carga y pagos**")
+    st.title("📊 Analytics Dashboard - BQ13, BQ14 & BQ5")
+    st.markdown("**Análisis de performance y comportamiento de reorders**")
     
     # Sidebar para cargar datos
     st.sidebar.header("📁 Cargar Datos")
@@ -395,15 +530,18 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3 = st.tabs(["📱 BQ13: App Loading", "💳 BQ14: Payment Time", "📊 Datos Crudos"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📱 BQ13: App Loading", "💳 BQ14: Payment Time", "🔁 BQ5: Reorders", "📊 Datos Crudos"])
         
         with tab1:
             bq13_analysis(df)
         
         with tab2:
             bq14_analysis(df)
-        
+
         with tab3:
+            bq5_analysis()
+
+        with tab4:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
