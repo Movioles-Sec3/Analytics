@@ -1,0 +1,18 @@
+# Analytics Dashboard - Requirements
+# Instalar con: pip install -r requirements.txt
+
+# Análisis de datos
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualización
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Dashboard interactivo
+streamlit>=1.28.0
+
+# Opcional: soporte para Excel
+openpyxl>=3.1.0
+
