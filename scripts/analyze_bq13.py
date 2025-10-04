@@ -5,8 +5,8 @@ Pregunta: ¿Cuál es el tiempo P95 de carga de la app (desde apertura hasta men�
 por clase de dispositivo y condiciones de red, y cómo cambia después de optimizaciones?
 
 Usage:
-    python analyze_bq13.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
-    python analyze_bq13.py "path/to/data.csv" --cutoff "2025-10-05"
+    python scripts/analyze_bq13.py "data/analytics_events.csv"
+    python scripts/analyze_bq13.py "path/to/data.csv" --cutoff "2025-10-05"
 """
 
 import pandas as pd

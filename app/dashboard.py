@@ -7,7 +7,7 @@ BQ13: P95 app loading time (open to usable menu) by device class and network
 BQ14: P95 payment time (Pay tap to confirmed) by network type and device class
 
 Usage:
-    streamlit run dashboard.py
+    streamlit run app/dashboard.py
 """
 
 import streamlit as st
@@ -361,7 +361,7 @@ def main():
     
     default_path = st.sidebar.text_input(
         "O especificar ruta del CSV",
-        value="Datos Kotlin/analytics_events.csv"
+        value="data/analytics_events.csv"
     )
     
     df = None

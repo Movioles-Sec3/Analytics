@@ -5,7 +5,7 @@ Pregunta: ¿Cuál es el tiempo P95 desde tap en "Pay" hasta pago confirmado,
 segmentado por tipo de red (Wi-Fi/4G/5G) y clase de dispositivo?
 
 Usage:
-    python analyze_bq14.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
+    python scripts/analyze_bq14.py "data/analytics_events.csv"
 """
 
 import pandas as pd

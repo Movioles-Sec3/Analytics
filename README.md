@@ -37,7 +37,7 @@ python -c "import streamlit; import pandas; print('✅ Todo instalado')"
 ### 🎯 Opción 1: Dashboard Interactivo (Recomendado)
 
 ```bash
-streamlit run dashboard.py
+streamlit run app/dashboard.py
 ```
 
 El dashboard se abre en http://localhost:8501 y permite:
@@ -53,10 +53,10 @@ El dashboard se abre en http://localhost:8501 y permite:
 
 ```bash
 # Análisis básico
-python analyze_bq13.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
+python scripts/analyze_bq13.py "data/analytics_events.csv"
 
 # Con comparación antes/después
-python analyze_bq13.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv" --cutoff "2025-10-05"
+python scripts/analyze_bq13.py "data/analytics_events.csv" --cutoff "2025-10-05"
 ```
 
 **Salidas**:
@@ -66,7 +66,7 @@ python analyze_bq13.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv" --cu
 #### BQ14 (Payment Time)
 
 ```bash
-python analyze_bq14.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
+python scripts/analyze_bq14.py "data/analytics_events.csv"
 ```
 
 **Salidas**:
@@ -81,7 +81,7 @@ python analyze_bq14.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
 Transforma los datos crudos agregando columnas derivadas (performance category, time of day, outlier detection, etc.):
 
 ```bash
-python transform_data.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
+python scripts/transform_data.py "data/analytics_events.csv"
 ```
 
 **Columnas agregadas**:
@@ -105,8 +105,7 @@ python transform_data.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
 Para testing o demos:
 
 ```bash
-cd "Pipelines Kotlin/Datos Kotlin"
-python generate_synthetic_data.py --events 500 --days 30
+python scripts/generate_synthetic_data.py --events 500 --days 30
 ```
 
 ---
@@ -164,14 +163,14 @@ El **percentil 95** significa que el 95% de los eventos tienen un tiempo ≤ ese
 
 ### Caso 1: Exploración Rápida
 ```bash
-streamlit run dashboard.py
+streamlit run app/dashboard.py
 # Carga tu CSV y explora visualmente
 ```
 
 ### Caso 2: Reportes para Presentaciones
 ```bash
-python analyze_bq13.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
-python analyze_bq14.py "Pipelines Kotlin/Datos Kotlin/analytics_events.csv"
+python scripts/analyze_bq13.py "data/analytics_events.csv"
+python scripts/analyze_bq14.py "data/analytics_events.csv"
 # Genera PNGs de alta calidad para slides
 ```
 
@@ -183,8 +182,8 @@ python analyze_bq13.py data.csv --cutoff "2025-10-05"
 
 ### Caso 4: Data Engineering Pipeline
 ```bash
-python transform_data.py raw_data.csv --output processed_data.csv
-python analyze_bq13.py processed_data.csv
+python scripts/transform_data.py raw_data.csv --output processed_data.csv
+python scripts/analyze_bq13.py processed_data.csv
 # Pipeline automatizado
 ```
 
@@ -222,7 +221,7 @@ Abre manualmente: http://localhost:8501
 
 ### Puerto 8501 ocupado
 ```bash
-streamlit run dashboard.py --server.port 8502
+streamlit run app/dashboard.py --server.port 8502
 ```
 
 ### Error al cargar CSV
@@ -236,17 +235,20 @@ streamlit run dashboard.py --server.port 8502
 
 ```
 Analytics/
-├── dashboard.py                          # Dashboard interactivo
-├── analyze_bq13.py                       # Script BQ13
-├── analyze_bq14.py                       # Script BQ14
-├── transform_data.py                     # Transformación de datos
+├── app/
+│   └── dashboard.py                      # Dashboard interactivo
+├── scripts/
+│   ├── analyze_bq13.py                   # Script BQ13
+│   ├── analyze_bq14.py                   # Script BQ14
+│   ├── transform_data.py                 # Transformación de datos
+│   └── generate_synthetic_data.py        # Generador de datos sintéticos
+├── data/
+│   └── analytics_events.csv              # Datos de ejemplo
+├── docs/
+│   └── QUICKSTART.md                     # Guía rápida
 ├── requirements.txt                      # Dependencias Python
 ├── README.md                             # Este archivo
-├── run_dashboard.bat                     # Launcher Windows
-└── Pipelines Kotlin/
-    └── Datos Kotlin/
-        ├── analytics_events.csv          # Datos reales
-        └── generate_synthetic_data.py    # Generador de datos
+└── .gitignore                            # Ignorar archivos locales
 ```
 
 ---
