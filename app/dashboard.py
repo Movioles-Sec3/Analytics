@@ -24,10 +24,12 @@ import os
 import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
+    from app.views.recommended_adds import render_recommended_adds
 except ModuleNotFoundError:
     # Ensure project root is on sys.path when running as a script
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
+    from app.views.recommended_adds import render_recommended_adds
 
 # Configuración de página
 st.set_page_config(
@@ -800,11 +802,12 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
             "📱 BQ13: App Loading", 
             "💳 BQ14: Payment Time", 
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders", 
+            "⭐ Recommended Adds",
             "📊 Datos Crudos"
         ])
         
@@ -821,6 +824,9 @@ def main():
             bq5_analysis()
 
         with tab5:
+            render_recommended_adds()
+
+        with tab6:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
