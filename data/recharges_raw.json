@@ -1,0 +1,26 @@
+[
+  {
+    "id": 3,
+    "usuario_id": 4,
+    "usuario_nombre": "Andres",
+    "usuario_email": "andres@gmail.com",
+    "monto": 5000.0,
+    "fecha_hora": "2025-10-31T22:06:32"
+  },
+  {
+    "id": 2,
+    "usuario_id": 3,
+    "usuario_nombre": "Sergio",
+    "usuario_email": "sergio@gmail.com",
+    "monto": 2000.0,
+    "fecha_hora": "2025-10-31T22:05:15"
+  },
+  {
+    "id": 1,
+    "usuario_id": 3,
+    "usuario_nombre": "Sergio",
+    "usuario_email": "sergio@gmail.com",
+    "monto": 20000.0,
+    "fecha_hora": "2025-10-31T22:04:49"
+  }
+]

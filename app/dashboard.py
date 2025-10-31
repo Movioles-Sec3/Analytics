@@ -19,15 +19,17 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
+    from app.pipelines.recharges import run_recharges_etl
 except ModuleNotFoundError:
     # Ensure project root is on sys.path when running as a script
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
+    from app.pipelines.recharges import run_recharges_etl
 
 # Configuración de página
 st.set_page_config(
@@ -410,17 +412,17 @@ def bq5_analysis():
     st.header("🔁 BQ5: Reorders by Category and Time")
 
     # Parameter controls (calendar with defaults this year)
-    current_year = datetime.utcnow().year
+    current_year = datetime.now(timezone.utc).year
     default_start = datetime(current_year, 1, 1).date()
     default_end = datetime(current_year, 12, 31).date()
 
     col1, col2, col3, col4 = st.columns([1,1,1,1])
     with col1:
-        start_date = st.date_input("From (UTC)", value=default_start)
+        start_date = st.date_input("From (UTC)", value=default_start, key="bq5_from")
     with col2:
-        end_date = st.date_input("To (UTC)", value=default_end)
+        end_date = st.date_input("To (UTC)", value=default_end, key="bq5_to")
     with col3:
-        tz_str = st.text_input("Timezone offset (minutes)", value="-300", placeholder="e.g., -300 for UTC-5")
+        tz_str = st.text_input("Timezone offset (minutes)", value="-300", placeholder="e.g., -300 for UTC-5", key="bq5_tz_offset")
     with col4:
         force_refresh = st.checkbox("Force refresh cache", value=False, help="Ignore cache and query backend")
 
@@ -527,6 +529,135 @@ def bq5_analysis():
     with col2:
         if df_hourly is not None and not df_hourly.empty:
             st.download_button("Download hourly distribution (CSV)", data=df_hourly.to_csv(index=False), file_name="bq5_hourly_distribution.csv", mime="text/csv")
+
+def recharges_analysis():
+    """
+    Recharges: How many unique users top up their account each week?
+    Fetches from backend (cached), aggregates weekly unique users (with local TZ adjustment), and renders.
+    """
+    st.header("💵 Top-ups: Weekly Unique Users")
+
+    # Controls
+    current_year = datetime.now(timezone.utc).year
+    default_start = datetime(current_year, 1, 1).date()
+    default_end = datetime(current_year, 12, 31).date()
+
+    col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1])
+    with col1:
+        start_date = st.date_input("From (UTC)", value=default_start, key="recharges_from")
+    with col2:
+        end_date = st.date_input("To (UTC)", value=default_end, key="recharges_to")
+    with col3:
+        tz_str = st.text_input("Timezone offset (minutes)", value="-300", placeholder="e.g., -300 for UTC-5", key="recharges_tz_offset")
+    with col4:
+        page_size = st.number_input("Page size (limit)", min_value=1, max_value=1000, value=1000, step=50)
+    with col5:
+        force_refresh = st.checkbox("Force refresh cache", value=False)
+
+    if end_date < start_date:
+        st.warning("'To' date must be on or after 'From' date.")
+        return
+
+    try:
+        tz_offset = int(tz_str) if tz_str.strip() else 0
+    except ValueError:
+        st.warning("Timezone offset must be an integer (minutes). Using 0.")
+        tz_offset = 0
+
+    # ETL
+    try:
+        frames = run_recharges_etl(
+            start=datetime.combine(start_date, datetime.min.time()),
+            end=datetime.combine(end_date, datetime.min.time()),
+            limit=int(page_size),
+            force_refresh=bool(force_refresh)
+        )
+    except Exception as e:
+        st.error(f"❌ Error running recharges ETL: {e}")
+        return
+
+    df = frames.get("recharges")
+    if df is None or df.empty:
+        st.info("No recharges found for the selected period.")
+        return
+
+    # Ensure datetime
+    if "fecha_hora" in df.columns:
+        df["fecha_hora"] = pd.to_datetime(df["fecha_hora"], utc=True, errors="coerce")
+
+    # Local time adjustment and weekly grouping (Monday-start)
+    df_local = df.copy()
+    if "fecha_hora" in df_local.columns:
+        df_local["fecha_local"] = df_local["fecha_hora"] + pd.to_timedelta(tz_offset, unit="m")
+        week_period = df_local["fecha_local"].dt.to_period("W-MON")
+        df_local["week_start_local"] = week_period.apply(lambda p: p.start_time.date())
+    else:
+        df_local["week_start_local"] = pd.NaT
+
+    user_id_col = "usuario_id" if "usuario_id" in df_local.columns else ("user_id" if "user_id" in df_local.columns else None)
+    if user_id_col is None:
+        st.error("User id field not found in response.")
+        return
+
+    weekly_local = df_local.groupby("week_start_local").agg(
+        unique_users=(user_id_col, "nunique"),
+        topups=(user_id_col, "count")
+    ).reset_index().sort_values("week_start_local")
+
+    # KPIs
+    total_topups = int(df_local.shape[0])
+    total_unique_users = int(df_local[user_id_col].nunique())
+    weeks = weekly_local.shape[0]
+    avg_per_week = (weekly_local["unique_users"].mean() if weeks > 0 else 0)
+
+    k1, k2, k3, k4 = st.columns(4)
+    with k1:
+        st.metric("Total top-ups", total_topups)
+    with k2:
+        st.metric("Unique users (period)", total_unique_users)
+    with k3:
+        st.metric("Weeks", weeks)
+    with k4:
+        st.metric("Avg unique/week", f"{avg_per_week:.1f}")
+
+    # Chart: weekly unique users (one discrete point per week)
+    st.subheader("📈 Weekly unique users (local TZ)")
+    weekly_plot = weekly_local.sort_values("week_start_local").copy()
+    weekly_plot["week"] = pd.to_datetime(weekly_plot["week_start_local"], errors="coerce").dt.strftime("%Y-%m-%d")
+    fig_week = px.bar(
+        weekly_plot,
+        x="week",
+        y="unique_users",
+        title="Weekly unique top-up users",
+        text="unique_users",
+    )
+    fig_week.update_traces(textposition='outside')
+    fig_week.update_layout(
+        xaxis_title="Week start",
+        yaxis_title="Unique users",
+        xaxis=dict(type='category', tickangle=-45)
+    )
+    st.plotly_chart(fig_week, use_container_width=True)
+
+    # Top users by number of top-ups
+    st.subheader("🏅 Top users by number of top-ups")
+    top_users = df_local.groupby(user_id_col).size().reset_index(name="topups").sort_values("topups", ascending=False).head(10)
+    # Add name/email if present
+    if "usuario_nombre" in df_local.columns:
+        names = df_local[[user_id_col, "usuario_nombre"]].dropna().drop_duplicates().set_index(user_id_col)
+        top_users = top_users.join(names, on=user_id_col)
+    if "usuario_email" in df_local.columns:
+        emails = df_local[[user_id_col, "usuario_email"]].dropna().drop_duplicates().set_index(user_id_col)
+        top_users = top_users.join(emails, on=user_id_col)
+    st.dataframe(top_users, use_container_width=True, hide_index=True)
+
+    # Downloads
+    st.subheader("📥 Downloads")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.download_button("Download weekly unique users (CSV)", data=weekly_local.to_csv(index=False), file_name="recharges_weekly_unique_users_local.csv", mime="text/csv")
+    with c2:
+        st.download_button("Download raw recharges (CSV)", data=df.to_csv(index=False), file_name="recharges.csv", mime="text/csv")
 
 def bq4_analysis():
     """
@@ -654,14 +785,14 @@ def bq4_analysis():
                 st.markdown("### 📊 Peak Hours")
                 stats_peak = pd.DataFrame({
                     'Métrica': ['Count', 'Median', 'Mean', 'Std Dev', 'Min', 'Max'],
-                    'Valor': [
-                        len(peak_data),
-                        f"{peak_data.median():.2f}s",
-                        f"{peak_data.mean():.2f}s",
-                        f"{peak_data.std():.2f}s",
-                        f"{peak_data.min():.2f}s",
-                        f"{peak_data.max():.2f}s"
-                    ]
+                     'Valor': [
+                         f"{len(peak_data)}",
+                         f"{peak_data.median():.2f}s",
+                         f"{peak_data.mean():.2f}s",
+                         f"{peak_data.std():.2f}s",
+                         f"{peak_data.min():.2f}s",
+                         f"{peak_data.max():.2f}s"
+                     ]
                 })
                 st.dataframe(stats_peak, use_container_width=True, hide_index=True)
             
@@ -669,14 +800,14 @@ def bq4_analysis():
                 st.markdown("### 📊 Off-Peak Hours")
                 stats_offpeak = pd.DataFrame({
                     'Métrica': ['Count', 'Median', 'Mean', 'Std Dev', 'Min', 'Max'],
-                    'Valor': [
-                        len(offpeak_data),
-                        f"{offpeak_data.median():.2f}s",
-                        f"{offpeak_data.mean():.2f}s",
-                        f"{offpeak_data.std():.2f}s",
-                        f"{offpeak_data.min():.2f}s",
-                        f"{offpeak_data.max():.2f}s"
-                    ]
+                     'Valor': [
+                         f"{len(offpeak_data)}",
+                         f"{offpeak_data.median():.2f}s",
+                         f"{offpeak_data.mean():.2f}s",
+                         f"{offpeak_data.std():.2f}s",
+                         f"{offpeak_data.min():.2f}s",
+                         f"{offpeak_data.max():.2f}s"
+                     ]
                 })
                 st.dataframe(stats_offpeak, use_container_width=True, hide_index=True)
         
@@ -800,11 +931,12 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
             "📱 BQ13: App Loading", 
             "💳 BQ14: Payment Time", 
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders", 
+            "💵 Top-ups (Weekly Users)",
             "📊 Datos Crudos"
         ])
         
@@ -821,6 +953,9 @@ def main():
             bq5_analysis()
 
         with tab5:
+            recharges_analysis()
+
+        with tab6:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
