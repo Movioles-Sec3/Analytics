@@ -6,7 +6,7 @@
     {
       "categoria_id": 1,
       "categoria_nombre": "Cervezas",
-      "reorder_count": 3,
+      "reorder_count": 4,
       "hour_distribution": [
         {
           "hour": 15,
@@ -18,12 +18,10 @@
         },
         {
           "hour": 18,
-          "count": 1
+          "count": 2
         }
       ],
       "peak_hours": [
-        15,
-        17,
         18
       ]
     },
