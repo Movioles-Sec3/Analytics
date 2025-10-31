@@ -1,6 +1,6 @@
-# 📊 Analytics Dashboard - BQ13, BQ14 & BQ4
+# 📊 Analytics Dashboard - BQ13, BQ14, BQ4 & BQ5
 
-Dashboard y scripts de análisis para responder preguntas de negocio sobre performance de app, pagos y tiempos de pickup.
+Dashboard y scripts de análisis para responder preguntas de negocio sobre performance de app, pagos, tiempos de pickup, reorders y picos de pedidos.
 
 ## 📋 Preguntas de Negocio
 
@@ -22,6 +22,22 @@ Dashboard y scripts de análisis para responder preguntas de negocio sobre perfo
 **Datos analizados**: Compras completadas  
 **Scripts**: `scripts/analyze_bq4.py`, `scripts/dashboard_bq4.py`  
 **Documentación**: [docs/BQ4.md](docs/BQ4.md) | [Quick Start](docs/QUICKSTART_BQ4.md)
+
+### BQ5: Reorders by Category and Time 🔁
+> ¿Qué categorías de productos se reordenan más frecuentemente y en qué horarios?
+
+**Datos analizados**: Reorders por categoría  
+**Pipeline**: `app/pipelines/bq5.py`  
+**Backend**: `/analytics/reorders-by-category`
+
+### Order Peak Hours 🕐 (NEW)
+> ¿En qué horas está el pico de pedidos?
+
+**Datos analizados**: Órdenes por hora  
+**Pipeline**: `app/pipelines/order_peak_hours.py`  
+**View**: `app/views/order_peak_hours.py`  
+**Backend**: `/analytics/order-peak-hours`  
+**Documentación**: [docs/ORDER_PEAK_HOURS.md](docs/ORDER_PEAK_HOURS.md)
 
 ---
 
@@ -53,6 +69,10 @@ El dashboard se abre en http://localhost:8501 y permite:
 - 📁 Cargar CSV drag & drop
 - 📱 Analizar BQ13 con comparación antes/después
 - 💳 Analizar BQ14 con tasas de éxito
+- ⏱️ Analizar BQ4 con tiempos de pickup
+- 🔁 Analizar BQ5 con reorders por categoría
+- 🕐 **Analizar Order Peak Hours** - identificar horas pico de pedidos
+- ⭐ Ver productos recomendados
 - 📈 Gráficos interactivos (zoom, pan, export)
 - 🔍 Explorar datos crudos con filtros
 
