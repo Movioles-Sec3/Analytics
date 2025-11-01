@@ -24,6 +24,7 @@ import os
 import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
+    from app.pipelines.recharges import run_recharges_etl
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
     from app.views.stock_risk import render_stock_risk
@@ -31,6 +32,7 @@ except ModuleNotFoundError:
     # Ensure project root is on sys.path when running as a script
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
+    from app.pipelines.recharges import run_recharges_etl
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
     from app.views.stock_risk import render_stock_risk
@@ -935,11 +937,12 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
             "📱 BQ13: App Loading", 
             "💳 BQ14: Payment Time", 
             "⏱️ BQ4: Pickup Time",
-            "🔁 BQ5: Reorders", 
+            "🔁 BQ5: Reorders",
+            "💵 Recharges",
             "🕐 Order Peak Hours",
             "📦 Stock Risk",
             "⭐ Recommended Adds",
@@ -959,15 +962,18 @@ def main():
             bq5_analysis()
 
         with tab5:
-            render_order_peak_hours()
+            recharges_analysis()
 
         with tab6:
-            render_stock_risk(df)
+            render_order_peak_hours()
 
         with tab7:
-            render_recommended_adds()
+            render_stock_risk(df)
 
         with tab8:
+            render_recommended_adds()
+
+        with tab9:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
