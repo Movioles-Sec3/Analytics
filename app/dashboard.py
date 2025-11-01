@@ -24,16 +24,16 @@ import os
 import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
-    from app.pipelines.recharges import run_recharges_etl
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
+    from app.views.stock_risk import render_stock_risk
 except ModuleNotFoundError:
     # Ensure project root is on sys.path when running as a script
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
-    from app.pipelines.recharges import run_recharges_etl
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
+    from app.views.stock_risk import render_stock_risk
 
 # Configuración de página
 st.set_page_config(
@@ -941,9 +941,9 @@ def main():
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders", 
             "🕐 Order Peak Hours",
+            "📦 Stock Risk",
             "⭐ Recommended Adds",
-            "📊 Datos Crudos",
-            "💵 Recharges"
+            "📊 Datos Crudos"
         ])
         
         with tab1:
@@ -962,9 +962,12 @@ def main():
             render_order_peak_hours()
 
         with tab6:
-            render_recommended_adds()
+            render_stock_risk(df)
 
         with tab7:
+            render_recommended_adds()
+
+        with tab8:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
@@ -1007,9 +1010,5 @@ def main():
                 mime="text/csv"
             )
 
-        with tab8:
-            recharges_analysis()
-
 if __name__ == "__main__":
     main()
-
