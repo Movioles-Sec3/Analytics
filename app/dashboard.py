@@ -24,12 +24,14 @@ import os
 import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
+    from app.pipelines.recharges import run_recharges_etl
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
 except ModuleNotFoundError:
     # Ensure project root is on sys.path when running as a script
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
+    from app.pipelines.recharges import run_recharges_etl
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
 
@@ -933,14 +935,15 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
             "📱 BQ13: App Loading", 
             "💳 BQ14: Payment Time", 
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders", 
             "🕐 Order Peak Hours",
             "⭐ Recommended Adds",
-            "📊 Datos Crudos"
+            "📊 Datos Crudos",
+            "💵 Recharges"
         ])
         
         with tab1:
@@ -1003,6 +1006,9 @@ def main():
                 file_name="filtered_analytics.csv",
                 mime="text/csv"
             )
+
+        with tab8:
+            recharges_analysis()
 
 if __name__ == "__main__":
     main()

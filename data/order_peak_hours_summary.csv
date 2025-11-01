@@ -1,0 +1,10 @@
+metric,value
+total_orders,4
+peak_hours,"[10, 14, 15, 16]"
+peak_hour_range,10:00 - 16:00
+orders_in_peak_hours,4
+percentage_in_peak_hours,100.0
+busiest_hour,10
+busiest_hour_orders,1
+slowest_hour,0
+slowest_hour_orders,0

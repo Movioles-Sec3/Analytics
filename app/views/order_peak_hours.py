@@ -150,6 +150,9 @@ def render_order_peak_hours():
     )
     
     fig_hourly.update_traces(textposition='outside')
+    fig_hourly.update_traces(
+        hovertemplate='<b>Hour</b>: %{x}:00<br><b>Orders</b>: %{y}<extra></extra>'
+    )
     fig_hourly.update_layout(
         xaxis=dict(
             tickmode='linear',
@@ -158,11 +161,10 @@ def render_order_peak_hours():
             title='Hour of Day (24h format)'
         ),
         yaxis_title='Number of Orders',
-        showlegend=True if color_col else False,
-        hovertemplate='<b>Hour</b>: %{x}:00<br><b>Orders</b>: %{y}<extra></extra>'
+        showlegend=True if color_col else False
     )
     
-    st.plotly_chart(fig_hourly, use_container_width=True)
+    st.plotly_chart(fig_hourly, width='stretch')
     
     # Additional visualizations in columns
     col1, col2 = st.columns(2)
@@ -179,7 +181,7 @@ def render_order_peak_hours():
                 hole=0.4
             )
             fig_pie.update_traces(textposition='inside', textinfo='percent+label')
-            st.plotly_chart(fig_pie, use_container_width=True)
+            st.plotly_chart(fig_pie, width='stretch')
         else:
             st.info("Percentage data not available.")
     
@@ -203,7 +205,7 @@ def render_order_peak_hours():
                 xaxis=dict(tickmode='linear', tick0=0, dtick=1),
                 showlegend=False
             )
-            st.plotly_chart(fig_revenue, use_container_width=True)
+            st.plotly_chart(fig_revenue, width='stretch')
         else:
             st.info("Revenue data not available.")
     
@@ -261,7 +263,7 @@ def render_order_peak_hours():
         text_auto=True
     )
     fig_heatmap.update_layout(height=200)
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+    st.plotly_chart(fig_heatmap, width='stretch')
     
     # Insights and recommendations
     st.subheader("💡 Insights & Recommendations")
