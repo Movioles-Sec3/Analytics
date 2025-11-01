@@ -1,0 +1,5 @@
+product_id,product_name,total_orders,total_units,total_revenue,first_order_at,last_order_at
+1,Corona,5,18,144000.0,2025-10-12 15:02:41,2025-11-01 03:05:31
+5,Piña Colada,1,1,18000.0,2025-11-01 03:40:47,2025-11-01 03:40:47
+4,Mojito,1,1,15000.0,2025-11-01 03:40:36,2025-11-01 03:40:36
+2,Club Colombia,1,1,7000.0,2025-11-01 01:30:53,2025-11-01 01:30:53
