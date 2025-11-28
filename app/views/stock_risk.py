@@ -1,8 +1,8 @@
 """
-Products at risk of stockout
-============================
-Identify the most frequently ordered products so the team can plan
-replenishment before inventory runs out.
+Favorite products
+=================
+Highlight the most demanded products to celebrate fan favorites
+and plan promotions around what customers love.
 """
 
 from __future__ import annotations
@@ -74,15 +74,15 @@ def _detect_columns(df: pd.DataFrame) -> Optional[ColumnMapping]:
 
 def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
     """
-    Render the stock risk tab.
+    Render the favorite products tab.
 
     Expects a DataFrame with at least one product-name column. If a quantity column exists,
     it is used as weight; otherwise each row counts as a single order.
     """
-    st.header("📦 Products at Risk of Stockout")
+    st.header("⭐ Favorite Products")
     st.markdown(
-        "Surface the products with the highest demand so you can prioritize replenishment. "
-        "Use the filters to focus on specific categories or events."
+        "Discover the products customers love the most. Use the filters to explore "
+        "by category or event and spot opportunities for promos or bundles."
     )
 
     if df is None or df.empty:
@@ -93,10 +93,6 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
     working: Optional[pd.DataFrame] = None
 
     if mapping is None:
-        st.warning(
-            "No column resembling `product_name`, `producto_nombre`, or similar was detected in the main dataset. "
-            "Load a product-demand CSV below."
-        )
         uploaded_products = st.file_uploader(
             "Upload product demand CSV",
             type=["csv"],
@@ -118,7 +114,10 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
                 candidate_df = pd.read_csv(uploaded_products)
             elif custom_path and Path(custom_path).exists():
                 candidate_df = pd.read_csv(custom_path)
-                st.caption(f"Loaded dataset from `{custom_path}`.")
+                st.caption(f"Loaded product dataset from `{custom_path}`.")
+            elif default_candidates:
+                candidate_df = pd.read_csv(default_candidates[0])
+                st.caption(f"Loaded sample product dataset from `{default_candidates[0].name}`.")
         except Exception as exc:
             st.error(f"Could not read the provided CSV: {exc}")
             return
@@ -135,6 +134,7 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
             )
             return
         working = candidate_df.copy()
+        st.success("Using product-demand CSV for favorite products analysis.")
     else:
         working = df.copy()
 
@@ -220,7 +220,7 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
     )
 
     min_orders = st.number_input(
-        "Minimum units to flag risk", value=1, min_value=1, step=1
+        "Minimum units to include in ranking", value=1, min_value=1, step=1
     )
     aggregated = aggregated[aggregated["total_units"] >= min_orders]
     if aggregated.empty:
@@ -229,7 +229,7 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
 
     top_products = aggregated.head(top_n)
 
-    st.subheader("🏅 Top Risk Products")
+    st.subheader("🏅 Favorite Products Ranking")
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -252,7 +252,7 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
         y=mapping.product_col,
         orientation="h",
         text="total_units",
-        title="Highest-demand products",
+        title="Most loved products",
         labels={
             mapping.product_col: "Product",
             "total_units": "Units / orders",
@@ -270,11 +270,10 @@ def render_stock_risk(df: Optional[pd.DataFrame]) -> None:
     st.download_button(
         "📥 Download full ranking",
         data=csv_bytes,
-        file_name="products_stock_risk.csv",
+        file_name="favorite_products.csv",
         mime="text/csv",
     )
 
     st.markdown(
-        "💡 **Tip:** Combine this ranking with inventory on hand or supplier lead times to "
-        "prioritize replenishment and avoid stockouts."
+        "💡 **Tip:** Use this ranking to decide featured items, bundles, or promos around your top products."
     )

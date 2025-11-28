@@ -944,7 +944,7 @@ def main():
             "🔁 BQ5: Reorders",
             "💵 Recharges",
             "🕐 Order Peak Hours",
-            "📦 Stock Risk",
+            "⭐ Favorite Products",
             "⭐ Recommended Adds",
             "📊 Datos Crudos"
         ])
