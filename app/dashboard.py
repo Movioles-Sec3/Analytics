@@ -941,7 +941,7 @@ def main():
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders", 
             "🕐 Order Peak Hours",
-            "📦 Stock Risk",
+            "⭐ Favorite Products",
             "⭐ Recommended Adds",
             "📊 Datos Crudos"
         ])
