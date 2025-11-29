@@ -30,6 +30,15 @@ Dashboard y scripts de análisis para responder preguntas de negocio sobre perfo
 **Pipeline**: `app/pipelines/bq5.py`  
 **Backend**: `/analytics/reorders-by-category`
 
+### Most Requested Categories 🏆 (NEW)
+> ¿Cuáles son las categorías más solicitadas por los usuarios?
+
+**Datos analizados**: Órdenes agregadas por categoría  
+**Pipeline**: `app/pipelines/most_requested_categories.py`  
+**View**: `app/views/most_requested_categories.py`  
+**Backend**: `/analytics/most-requested-categories`  
+**Documentación**: [docs/MOST_REQUESTED_CATEGORIES.md](docs/MOST_REQUESTED_CATEGORIES.md)
+
 ### Order Peak Hours 🕐 (NEW)
 > ¿En qué horas está el pico de pedidos?
 
@@ -38,6 +47,15 @@ Dashboard y scripts de análisis para responder preguntas de negocio sobre perfo
 **View**: `app/views/order_peak_hours.py`  
 **Backend**: `/analytics/order-peak-hours`  
 **Documentación**: [docs/ORDER_PEAK_HOURS.md](docs/ORDER_PEAK_HOURS.md)
+
+### Product Search Peak Hours 🔎 (NEW)
+> ¿En qué horas del día los usuarios usan con mayor frecuencia el buscador de productos?
+
+**Eventos analizados**: `GET /productos/buscar` registrados  
+**Pipeline**: `app/pipelines/product_search_peak_hours.py`  
+**View**: `app/views/product_search_peak_hours.py`  
+**Backend**: `/analytics/product-search-peak-hours`  
+**Documentación**: [docs/PRODUCT_SEARCH_PEAK_HOURS.md](docs/PRODUCT_SEARCH_PEAK_HOURS.md)
 
 ---
 
@@ -71,7 +89,9 @@ El dashboard se abre en http://localhost:8501 y permite:
 - 💳 Analizar BQ14 con tasas de éxito
 - ⏱️ Analizar BQ4 con tiempos de pickup
 - 🔁 Analizar BQ5 con reorders por categoría
+- 🏆 **Analizar Most Requested Categories** - ranking de categorías más vendidas
 - 🕐 **Analizar Order Peak Hours** - identificar horas pico de pedidos
+- 🔎 **Analizar Product Search Peak Hours** - descubrir horas pico de búsquedas
 - ⭐ Ver productos recomendados
 - 📈 Gráficos interactivos (zoom, pan, export)
 - 🔍 Explorar datos crudos con filtros

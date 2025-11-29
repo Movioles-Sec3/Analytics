@@ -1,6 +1,6 @@
 {
   "start": "2025-09-01T00:00:00Z",
-  "end": "2025-11-01T23:59:59Z",
+  "end": "2025-11-12T23:59:59Z",
   "timezone_offset_minutes": -300,
   "hourly_distribution": [
     {
@@ -85,10 +85,10 @@
     },
     {
       "hour": 10,
-      "order_count": 1,
-      "total_revenue": 16000.0,
-      "avg_order_value": 16000.0,
-      "percentage": 25.0,
+      "order_count": 18,
+      "total_revenue": 856000.0,
+      "avg_order_value": 47555.555555555555,
+      "percentage": 85.71,
       "is_peak": true
     },
     {
@@ -120,7 +120,7 @@
       "order_count": 1,
       "total_revenue": 15000.0,
       "avg_order_value": 15000.0,
-      "percentage": 25.0,
+      "percentage": 4.76,
       "is_peak": true
     },
     {
@@ -128,7 +128,7 @@
       "order_count": 1,
       "total_revenue": 8000.0,
       "avg_order_value": 8000.0,
-      "percentage": 25.0,
+      "percentage": 4.76,
       "is_peak": true
     },
     {
@@ -136,7 +136,7 @@
       "order_count": 1,
       "total_revenue": 8000.0,
       "avg_order_value": 8000.0,
-      "percentage": 25.0,
+      "percentage": 4.76,
       "is_peak": true
     },
     {
@@ -203,7 +203,7 @@
     16
   ],
   "summary": {
-    "total_orders": 4,
+    "total_orders": 21,
     "peak_hours": [
       10,
       14,
@@ -211,10 +211,10 @@
       16
     ],
     "peak_hour_range": "10:00 - 16:00",
-    "orders_in_peak_hours": 4,
+    "orders_in_peak_hours": 21,
     "percentage_in_peak_hours": 100.0,
     "busiest_hour": 10,
-    "busiest_hour_orders": 1,
+    "busiest_hour_orders": 18,
     "slowest_hour": 0,
     "slowest_hour_orders": 0
   }
