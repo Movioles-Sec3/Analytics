@@ -1,6 +1,6 @@
 metric,value
-start,2025-11-29T00:00:00Z
-end,2025-11-29T23:59:59Z
+start,2025-01-01T00:00:00Z
+end,2025-12-31T23:59:59Z
 timezone_offset_minutes,-300
 total_searches,5
 peak_hours,03:00

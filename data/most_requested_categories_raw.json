@@ -1,0 +1,23 @@
+{
+  "start": "2025-01-01T00:00:00Z",
+  "end": "2025-12-31T23:59:59Z",
+  "total_orders": 38,
+  "categories": [
+    {
+      "categoria_id": 1,
+      "categoria_nombre": "Cervezas",
+      "total_orders": 21,
+      "total_units": 75,
+      "total_revenue": 581000.0,
+      "orders_percentage": 55.26
+    },
+    {
+      "categoria_id": 2,
+      "categoria_nombre": "Cócteles",
+      "total_orders": 17,
+      "total_units": 17,
+      "total_revenue": 306000.0,
+      "orders_percentage": 44.74
+    }
+  ]
+}

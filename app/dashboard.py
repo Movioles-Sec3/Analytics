@@ -25,6 +25,7 @@ import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
     from app.pipelines.recharges import run_recharges_etl
+    from app.views.most_requested_categories import render_most_requested_categories
     from app.views.product_search_peak_hours import render_product_search_peak_hours
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
@@ -35,6 +36,7 @@ except ModuleNotFoundError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
     from app.pipelines.recharges import run_recharges_etl
+    from app.views.most_requested_categories import render_most_requested_categories
     from app.views.product_search_peak_hours import render_product_search_peak_hours
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
@@ -946,6 +948,7 @@ def main():
             "💳 BQ14: Payment Time",
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders",
+            "🏆 Most Requested Categories",
             "💵 Recharges",
             "🕐 Order Peak Hours",
             "🔎 Search Peak Hours",
@@ -967,6 +970,7 @@ def main():
             tab9,
             tab10,
             tab11,
+            tab12,
         ) = tabs
 
         with tab1:
@@ -982,24 +986,27 @@ def main():
             bq5_analysis()
 
         with tab5:
-            recharges_analysis()
+            render_most_requested_categories()
 
         with tab6:
-            render_order_peak_hours()
+            recharges_analysis()
 
         with tab7:
-            render_product_search_peak_hours()
+            render_order_peak_hours()
 
         with tab8:
-            render_stock_risk(df)
+            render_product_search_peak_hours()
 
         with tab9:
-            render_recommended_adds()
+            render_stock_risk(df)
 
         with tab10:
-            render_recharges_vs_purchases()
+            render_recommended_adds()
 
         with tab11:
+            render_recharges_vs_purchases()
+
+        with tab12:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros

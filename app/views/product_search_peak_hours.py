@@ -47,12 +47,14 @@ def render_product_search_peak_hours() -> None:
 
     col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
+    default_start = datetime(2025, 1, 1).date()
+    default_end = datetime(2025, 12, 31).date()
+
     with col1:
-        today = datetime.utcnow().date()
-        start_date = st.date_input("From (UTC)", value=today, key="product_search_from")
+        start_date = st.date_input("From (UTC)", value=default_start, key="product_search_from")
 
     with col2:
-        end_date = st.date_input("To (UTC)", value=today, key="product_search_to")
+        end_date = st.date_input("To (UTC)", value=default_end, key="product_search_to")
 
     with col3:
         tz_str = st.text_input(

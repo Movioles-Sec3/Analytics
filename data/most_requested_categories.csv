@@ -1,0 +1,3 @@
+categoria_id,categoria_nombre,total_orders,total_units,total_revenue,orders_percentage
+1,Cervezas,21,75,581000.0,55.26
+2,Cócteles,17,17,306000.0,44.74
