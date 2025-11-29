@@ -28,6 +28,7 @@ try:
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
     from app.views.stock_risk import render_stock_risk
+    from app.views.recharges_vs_purchases import render_recharges_vs_purchases
 except ModuleNotFoundError:
     # Ensure project root is on sys.path when running as a script
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
@@ -36,6 +37,7 @@ except ModuleNotFoundError:
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
     from app.views.stock_risk import render_stock_risk
+    from app.views.recharges_vs_purchases import render_recharges_vs_purchases
 
 # Configuración de página
 st.set_page_config(
@@ -945,6 +947,7 @@ def main():
             "💵 Recharges",
             "🕐 Order Peak Hours",
             "⭐ Favorite Products",
+            "🔗 Recharges vs Purchases",
             "⭐ Recommended Adds",
             "📊 Datos Crudos"
         ])
