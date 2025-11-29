@@ -86,30 +86,66 @@ def render_order_peak_hours():
         # Create metrics from summary data
         metrics_dict = dict(zip(df_summary['metric'], df_summary['value']))
         
+        # Helper to fetch values supporting both Title Case and snake_case keys
+        def get_metric_value(*preferred_keys):
+            # Try provided keys as-is
+            for key in preferred_keys:
+                if key in metrics_dict:
+                    return metrics_dict[key]
+            # Try snake_case versions
+            for key in preferred_keys:
+                alt_key = key.lower().replace(" ", "_")
+                if alt_key in metrics_dict:
+                    return metrics_dict[alt_key]
+            return None
+        
+        # Resolve and format values
+        total_orders_val = get_metric_value("Total Orders")
+        busiest_hour_val = get_metric_value("Busiest Hour")
+        busiest_hour_orders_val = get_metric_value("Busiest Hour Orders")
+        percentage_peak_val = get_metric_value("Percentage in Peak Hours")
+        
+        # Format values defensively
+        def fmt_int(value):
+            try:
+                return int(float(value))
+            except (TypeError, ValueError):
+                return None
+        
+        def fmt_percent(value):
+            if value is None:
+                return None
+            if isinstance(value, str) and value.strip().endswith("%"):
+                return value
+            try:
+                return f"{float(value):.1f}%"
+            except (TypeError, ValueError):
+                return None
+        
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.metric(
                 "Total Orders", 
-                metrics_dict.get('Total Orders', 'N/A')
+                fmt_int(total_orders_val) if fmt_int(total_orders_val) is not None else "N/A"
             )
         
         with col2:
             st.metric(
                 "Busiest Hour",
-                f"{metrics_dict.get('Busiest Hour', 'N/A')}:00"
+                (f"{fmt_int(busiest_hour_val):02d}:00" if fmt_int(busiest_hour_val) is not None else "N/A")
             )
         
         with col3:
             st.metric(
                 "Peak Hour Orders",
-                metrics_dict.get('Busiest Hour Orders', 'N/A')
+                fmt_int(busiest_hour_orders_val) if fmt_int(busiest_hour_orders_val) is not None else "N/A"
             )
         
         with col4:
             st.metric(
                 "Peak Hours Coverage",
-                metrics_dict.get('Percentage in Peak Hours', 'N/A')
+                fmt_percent(percentage_peak_val) if fmt_percent(percentage_peak_val) is not None else "N/A"
             )
         
         # Display full summary table

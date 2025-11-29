@@ -25,6 +25,7 @@ import sys
 try:
     from app.pipelines.bq5 import run_bq5_etl
     from app.pipelines.recharges import run_recharges_etl
+    from app.views.product_search_peak_hours import render_product_search_peak_hours
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
     from app.views.stock_risk import render_stock_risk
@@ -34,6 +35,7 @@ except ModuleNotFoundError:
     sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from app.pipelines.bq5 import run_bq5_etl
     from app.pipelines.recharges import run_recharges_etl
+    from app.views.product_search_peak_hours import render_product_search_peak_hours
     from app.views.recommended_adds import render_recommended_adds
     from app.views.order_peak_hours import render_order_peak_hours
     from app.views.stock_risk import render_stock_risk
@@ -939,19 +941,34 @@ def main():
             st.dataframe(df.head(10), use_container_width=True)
         
         # Pestañas para cada análisis
-        tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
-            "📱 BQ13: App Loading", 
-            "💳 BQ14: Payment Time", 
+        tabs = st.tabs([
+            "📱 BQ13: App Loading",
+            "💳 BQ14: Payment Time",
             "⏱️ BQ4: Pickup Time",
             "🔁 BQ5: Reorders",
             "💵 Recharges",
             "🕐 Order Peak Hours",
+            "🔎 Search Peak Hours",
             "⭐ Favorite Products",
             "🔗 Recharges vs Purchases",
             "⭐ Recommended Adds",
-            "📊 Datos Crudos"
+            "📊 Datos Crudos",
         ])
-        
+
+        (
+            tab1,
+            tab2,
+            tab3,
+            tab4,
+            tab5,
+            tab6,
+            tab7,
+            tab8,
+            tab9,
+            tab10,
+            tab11,
+        ) = tabs
+
         with tab1:
             bq13_analysis(df)
         
@@ -971,12 +988,18 @@ def main():
             render_order_peak_hours()
 
         with tab7:
-            render_stock_risk(df)
+            render_product_search_peak_hours()
 
         with tab8:
-            render_recommended_adds()
+            render_stock_risk(df)
 
         with tab9:
+            render_recommended_adds()
+
+        with tab10:
+            render_recharges_vs_purchases()
+
+        with tab11:
             st.subheader("📊 Explorador de Datos Crudos")
             
             # Filtros
